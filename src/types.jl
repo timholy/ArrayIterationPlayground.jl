@@ -1,51 +1,51 @@
-typealias IterIndex Union{Int,UnitRange{Int},Colon}
+const IterIndex = Union{Int,UnitRange{Int},Colon}
 
 # isindex == true  => want the indexes (keys) of the array
 # isindex == false => want the values of the array
 # isstored == true  => visit only stored entries
 # isstored == false => visit all indexes
-immutable ArrayIndexingWrapper{A, I<:Tuple{Vararg{IterIndex}}, isindex, isstored}
+struct ArrayIndexingWrapper{A, I<:Tuple{Vararg{IterIndex}}, isindex, isstored}
     data::A
     indexes::I
 end
 
 # Internal type for storing instantiated index iterators but returning
 # array values
-immutable ValueIterator{A<:AbstractArray,I}
+struct ValueIterator{A<:AbstractArray,I}
     data::A
     iter::I
 end
 
-immutable SyncedIterator{I,F<:Tuple{Vararg{Function}}}
+struct SyncedIterator{I,F<:Tuple{Vararg{Function}}}
     iter::I
     itemfuns::F
 end
 
-typealias ArrayOrWrapper Union{AbstractArray,ArrayIndexingWrapper}
-typealias AllElements{A,I,isindex} Union{AbstractArray,ArrayIndexingWrapper{A,I,isindex,false}}
-typealias StoredElements{A,I,isindex} ArrayIndexingWrapper{A,I,isindex,true}
+const ArrayOrWrapper  = Union{AbstractArray,ArrayIndexingWrapper}
+const AllElements{A,I,isindex} = Union{AbstractArray,ArrayIndexingWrapper{A,I,isindex,false}}
+const StoredElements{A,I,isindex} = ArrayIndexingWrapper{A,I,isindex,true}
 
 # storageorder has to be type-stable because it controls the output of
 # sync, which is used in iteration
-abstract StorageOrder
-immutable FirstToLast <: StorageOrder end
-immutable OtherOrder{p} <: StorageOrder end
-immutable NoOrder <: StorageOrder end  # combination of reshape+permutedims=>undefined
+abstract type StorageOrder end
+struct FirstToLast <: StorageOrder end
+struct OtherOrder{p} <: StorageOrder end
+struct NoOrder <: StorageOrder end  # combination of reshape+permutedims=>undefined
 
 # For iterating over the *values* of an array in column-major order
-immutable FirstToLastIterator{N,AA}
+struct FirstToLastIterator{N,AA}
     parent::AA
     itr::CartesianRange{N}
 end
 
 # Contiguous ranges
-abstract Contiguity
-immutable Contiguous <: Contiguity end
-immutable NonContiguous <: Contiguity end
-immutable MaybeContiguous <: Contiguity end  # intermediate type used in assessing contiguity
+abstract type Contiguity end
+struct Contiguous <: Contiguity end
+struct NonContiguous <: Contiguity end
+struct MaybeContiguous <: Contiguity end  # intermediate type used in assessing contiguity
 
 # Contiguous cartesian ranges. Sometimes needed for LinearSlow arrays.
-immutable ContigCartIterator{N}
+struct ContigCartIterator{N}
     arrayrange::CartesianRange{N}
     columnrange::CartesianRange{N}
 end

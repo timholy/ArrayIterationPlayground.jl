@@ -1,6 +1,6 @@
 A = [1 5 -5;
      0 3 2]
-B = sub(A, 1:2, 1:3)
+B = view(A, 1:2, 1:3)
 
 @test each(index(A)) == eachindex(A) == 1:length(A)
 @test each(index(B)) == CartesianRange((1:2, 1:3))
@@ -56,7 +56,7 @@ end
 A = Int[1 3; 2 4]
 B = Array{Int}(2, 2)
 C = PermutedDimsArray(Array{Int}(2, 2), [2,1])
-R = reshape(sub(Array{Int}(3,2,3), 1:2, 1:1, 1:2), (2, 2))
+R = reshape(view(Array{Int}(3,2,3), 1:2, 1:1, 1:2), (2, 2))
 
 function badcopy!(dest, src)
     for (I, s) in zip(eachindex(dest), src)
@@ -69,8 +69,8 @@ fill!(B, -1)
 @test badcopy!(B, A) == A
 fill!(C, -1)
 badcopy!(C, A)
-@test C[2,1] != A[2,1]   # oops!
-@test C[2,1] == A[1,2]
+@test C.parent[2,1] != A[2,1]   # oops!
+@test C.parent[2,1] == A[1,2]
 
 function goodcopy!(dest, src)
     for (I, s) in sync(index(dest), src)
@@ -153,8 +153,8 @@ function mysum1b(A)
     s
 end
 
-@test_approx_eq mysum1a(A) sum(A)
-@test_approx_eq mysum1b(A) sum(A)
+@test mysum1a(A) ≈ sum(A)
+@test mysum1b(A) ≈ sum(A)
 
 # 3-argument form
 function mysum!(dest, A, B)
@@ -194,7 +194,7 @@ end
 A = reshape(1:12, 4, 3)    # LinearFast
 @test each(index(A, :, 2)) == 5:8
 @test each(index(A, 2:3, 3)) == 10:11
-A = sub(copy(reshape(1:15, 5, 3)), 1:4, :)  # LinearSlow
+A = view(copy(reshape(1:15, 5, 3)), 1:4, :)  # LinearSlow
 a = reshape(A, 12)
 @test each(index(a, 1:4)) == CCI(CartesianRange(size(A)),
                                  CartesianRange(CartesianIndex(1,1),CartesianIndex(4,1)))
@@ -238,7 +238,7 @@ end
 const can_inline = Base.JLOptions().can_inline == 1
 dim1 = can_inline ? 10^6 : 10
 A = rand(dim1,2,5)
-B = sub(A, 1:size(A,1)-1, :, :)
+B = view(A, 1:size(A,1)-1, :, :)
 R = reshape(B, (size(B,1),prod(size(B)[2:end])))
 @test isa(each(index(R, :, 2)), CCI)
 S1 = zeros(1,size(R,2))

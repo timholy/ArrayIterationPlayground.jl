@@ -1,7 +1,7 @@
 # General API
 
 inds(A::AbstractArray, d) = 1:size(A, d)
-inds{T,N}(A::AbstractArray{T,N}) = ntuple(d->inds(A,d), Val{N})
+inds(A::AbstractArray{T,N}) where {T,N} = ntuple(d->inds(A,d), Val{N})
 
 eachindex(x...) = each(index(x...))
 
@@ -29,7 +29,7 @@ indexes are for `A` itself.
 
 See also: `value`, `stored`, `each`.
 """
-index{A,I,isindex,isstored}(w::ArrayIndexingWrapper{A,I,isindex,isstored}) = ArrayIndexingWrapper{A,I,true,isstored}(w.data, w.indexes)
+index(w::ArrayIndexingWrapper{A,I,isindex,isstored}) where {A,I,isindex,isstored} = ArrayIndexingWrapper{A,I,true,isstored}(w.data, w.indexes)
 
 """
 `value(A)`
@@ -42,7 +42,7 @@ create an iterator from a hint, call `each` on the resulting object.
 
 See also: `index`, `stored`, `each`.
 """
-value{A,I,isindex,isstored}(w::ArrayIndexingWrapper{A,I,isindex,isstored}) = ArrayIndexingWrapper{A,I,true,isstored}(w.data, w.indexes)
+value(w::ArrayIndexingWrapper{A,I,isindex,isstored}) where {A,I,isindex,isstored} = ArrayIndexingWrapper{A,I,true,isstored}(w.data, w.indexes)
 
 """
 `stored(A)`
@@ -55,21 +55,21 @@ an iterator from a hint, call `each` on the resulting object.
 
 See also: `index`, `value`, `each`.
 """
-stored{A,I,isindex,isstored}(w::ArrayIndexingWrapper{A,I,isindex,isstored}) = ArrayIndexingWrapper{A,I,isindex,true}(w.data, w.indexes)
+stored(w::ArrayIndexingWrapper{A,I,isindex,isstored}) where {A,I,isindex,isstored} = ArrayIndexingWrapper{A,I,isindex,true}(w.data, w.indexes)
 
-allindexes{T,N}(A::AbstractArray{T,N}) = ntuple(d->Colon(),Val{N})
+allindexes(A::AbstractArray{T,N}) where {T,N} = ntuple(d->Colon(),Val{N})
 
 index(A::AbstractArray) = index(A, allindexes(A))
 index(A::AbstractArray, I::IterIndex...) = index(A, I)
-index{T,N}(A::AbstractArray{T,N}, indexes::NTuple{N,IterIndex}) = ArrayIndexingWrapper{typeof(A),typeof(indexes),true,false}(A, indexes)
+index(A::AbstractArray{T,N}, indexes::NTuple{N,IterIndex}) where {T,N} = ArrayIndexingWrapper{typeof(A),typeof(indexes),true,false}(A, indexes)
 
 value(A::AbstractArray) = value(A, allindexes(A))
 value(A::AbstractArray, I::IterIndex...) = value(A, I)
-value{T,N}(A::AbstractArray{T,N}, indexes::NTuple{N,IterIndex}) = ArrayIndexingWrapper{typeof(A),typeof(indexes),false,false}(A, indexes)
+value(A::AbstractArray{T,N}, indexes::NTuple{N,IterIndex}) where {T,N} = ArrayIndexingWrapper{typeof(A),typeof(indexes),false,false}(A, indexes)
 
 stored(A::AbstractArray) = stored(A, allindexes(A))
 stored(A::AbstractArray, I::IterIndex...) = stored(A, I)
-stored{T,N}(A::AbstractArray{T,N}, indexes::NTuple{N,IterIndex}) = ArrayIndexingWrapper{typeof(A),typeof(indexes),false,true}(A, indexes)
+stored(A::AbstractArray{T,N}, indexes::NTuple{N,IterIndex}) where {T,N} = ArrayIndexingWrapper{typeof(A),typeof(indexes),false,true}(A, indexes)
 
 """
 `each(iterhint)`
@@ -82,12 +82,12 @@ all elements or just the stored elements.
 """
 each(A::AbstractArray) = each(A, allindexes(A))
 each(A::AbstractArray, indexes::IterIndex...) = each(A, indexes)
-each{T,N}(A::AbstractArray{T,N}, indexes::NTuple{N,IterIndex}) = each(ArrayIndexingWrapper{typeof(A),typeof(indexes),false,false}(A, indexes))
+each(A::AbstractArray{T,N}, indexes::NTuple{N,IterIndex}) where {T,N} = each(ArrayIndexingWrapper{typeof(A),typeof(indexes),false,false}(A, indexes))
 
 # Fallback definitions for each
-each{A,I,isstored}(W::ArrayIndexingWrapper{A,I,false,isstored}) = (itr = each(index(W)); ValueIterator{A,typeof(itr)}(W.data, itr))
-each{A,N,isstored}(W::ArrayIndexingWrapper{A,NTuple{N,Colon},true,isstored}) = eachindex(W.data)
-each{A,I,isstored}(W::ArrayIndexingWrapper{A,I,true,isstored}) = _each(contiguous_index(W.indexes), W)
+each(W::ArrayIndexingWrapper{A,I,false,isstored}) where {A,I,isstored} = (itr = each(index(W)); ValueIterator{A,typeof(itr)}(W.data, itr))
+each(W::ArrayIndexingWrapper{A,NTuple{N,Colon},true,isstored}) where {A,N,isstored} = eachindex(W.data)
+each(W::ArrayIndexingWrapper{A,I,true,isstored}) where {A,I,isstored} = _each(contiguous_index(W.indexes), W)
 
 _each(::Contiguous, W) = contiguous_iterator(W)
 _each(::Any, W) = CartesianRange(ranges(W))
@@ -142,7 +142,7 @@ _mapf(out, x) = out
 @inline _mapf(out, x, f, fs...) = _mapf((out..., f(x)), x, fs...)
 
 storageorder(::Array) = FirstToLast()
-storageorder{T,N,AA,perm}(::PermutedDimsArray{T,N,AA,perm}) = OtherOrder{perm}()
+storageorder(::PermutedDimsArray{T,N,AA,perm}) where {T,N,AA,perm} = OtherOrder{perm}()
 storageorder(A::ReshapedArray) = _so(storageorder(parent(A)))
 storageorder(A::AbstractArray) = storageorder(parent(A)) # parent required!
 
@@ -175,9 +175,9 @@ _extent_inds(out, A, d) = out
 @inline _extent_inds(out, A, d, ::Int, indexes...) = _extent_inds(out, A, d+1, indexes...)
 @inline _extent_inds(out, A, d, i, indexes...) = _extent_inds((out..., inds(A, d)), A, d+1, indexes...)
 
-columnmajoriterator(A::AbstractArray) = columnmajoriterator(linearindexing(A), A)
-columnmajoriterator(::LinearFast, A) = A
-columnmajoriterator(::LinearSlow, A) = FirstToLastIterator(A, CartesianRange(size(A)))
+columnmajoriterator(A::AbstractArray) = columnmajoriterator(IndexStyle(A), A)
+columnmajoriterator(::IndexLinear, A) = A
+columnmajoriterator(::IndexCartesian, A) = FirstToLastIterator(A, CartesianRange(size(A)))
 
 columnmajoriterator(W::ArrayIndexingWrapper) = CartesianRange(ranges(W))
 
@@ -200,12 +200,12 @@ _sso(::StorageOrder, ::StorageOrder) = Val{false}
 @inline contiguous_index(::MaybeContiguous, ::Any, I...) = NonContiguous()
 @inline contiguous_index(::Contiguity) = Contiguous()  # won't get here for NonContiguous
 
-contiguous_iterator(W) = _contiguous_iterator(W, linearindexing(parent(W)))
-function _contiguous_iterator(W, ::LinearFast)
+contiguous_iterator(W) = _contiguous_iterator(W, IndexStyle(parent(W)))
+function _contiguous_iterator(W, ::IndexLinear)
     f, l = firstlast(W)
     f:l
 end
-_contiguous_iterator(W, ::LinearSlow) = CartesianRange(ranges(W))
+_contiguous_iterator(W, ::IndexCartesian) = CartesianRange(ranges(W))
 
 function firstlast(W)
     A = parent(W)

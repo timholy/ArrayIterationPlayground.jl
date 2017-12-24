@@ -8,7 +8,7 @@
 end
 @inline done(iter::ContigCartIterator, state) = isless(iter.columnrange.stop, state)
 
-function _contiguous_iterator{AA<:ReshapedArray}(W::ArrayIndexingWrapper{AA}, ::LinearSlow)
+function _contiguous_iterator(W::ArrayIndexingWrapper{AA}, ::IndexCartesian) where {AA<:ReshapedArray}
     fi, li = firstlast(W)
     A = parent(W)
     f = Base.ind2sub_rs(A.mi, fi)

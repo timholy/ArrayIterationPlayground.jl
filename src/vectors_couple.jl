@@ -37,7 +37,7 @@ end
 # as the first argument.
 for op in (:+, :.*)
     @eval begin
-        function ($op){Tout<:SparseVector}(::Type{Tout}, x::AbstractVector{Tx}, y::AbstractVector{Ty})
+        function ($op)(::Type{Tout}, x::AbstractVector{Tx}, y::AbstractVector{Ty}) where {Tout<:SparseVector}
             length(x) == length(y) || throw(DimensionMismatch("x and y are of different lengths!"))
             z = Tout(length(x))  # doesn't exist yet, I think
             for (ix, iy) in couple(index(x), index(y))
